@@ -2,7 +2,7 @@ name: perspective_pageview
 description: Easy to use 3D-Perspective PageView.
 version: 0.0.1
 author: Paras Jain <retroportalstudio@gmail.com>
-homepage:
+homepage: https://github.com/retroportalstudio/flutter_perspective_pageview
 
 environment:
   sdk: ">=2.3.0 <3.0.0"
