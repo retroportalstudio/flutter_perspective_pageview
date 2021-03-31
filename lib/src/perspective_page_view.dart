@@ -8,24 +8,24 @@ class PerspectivePageView extends StatefulWidget {
   final bool hasShadow;
   final Color shadowColor;
   final PVAspectRatio aspectRatio;
+  final PageController pageController;
 
   PerspectivePageView({
     required this.children,
     required this.hasShadow,
     this.shadowColor = Colors.black12,
     this.aspectRatio = PVAspectRatio.ONE_ONE,
-  });
+    PageController? pageController,
+  }) : this.pageController = pageController ?? PageController(viewportFraction: 0.5);
 
   @override
   _PerspectivePageViewState createState() => _PerspectivePageViewState();
 }
 
 class _PerspectivePageViewState extends State<PerspectivePageView> {
-  final currentPageHolder = ValueNotifier(2.0);
-  final fraction = 0.50;
-  late final _controller = PageController(initialPage: 2, viewportFraction: fraction);
+  PageController get _controller => widget.pageController;
 
-  List<double> getAspectRatio() {
+  List<double> getAspectRatioAndShadowScale() {
     switch (widget.aspectRatio) {
       case PVAspectRatio.ONE_ONE:
         return [1.0, 1.6];
@@ -37,43 +37,42 @@ class _PerspectivePageViewState extends State<PerspectivePageView> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _controller.addListener(() {
-      currentPageHolder.value = _controller.page ?? 0;
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final List<double> arAndShadow = getAspectRatio();
+    final aspectRatioAndShadowScale = getAspectRatioAndShadowScale();
+    final aspectRatio = aspectRatioAndShadowScale[0];
+    final shadowScale = aspectRatioAndShadowScale[1];
     return Container(
       child: Center(
         child: AspectRatio(
-          aspectRatio: arAndShadow[0],
+          aspectRatio: aspectRatio,
           child: PageView.builder(
             controller: _controller,
             itemCount: widget.children.length,
             physics: BouncingScrollPhysics(),
             itemBuilder: (context, index) {
-              return ValueListenableBuilder<double>(
-                valueListenable: currentPageHolder,
+              // return PerspectiveCustomPage(
+              //   child: widget.children[index],
+              //   number: index,
+              //   fraction: _controller.viewportFraction,
+              //   hasShadow: widget.hasShadow,
+              //   shadowColor: widget.shadowColor,
+              //   shadowScale: shadowScale,
+              //   currentPage: currentPageHolder.value,
+              // );
+              return AnimatedBuilder(
+                animation: _controller,
                 child: widget.children[index],
-                builder: (context, currentPage, child) => PerspectiveCustomPage(
-                  child: child!,
-                  number: index,
-                  fraction: fraction,
-                  hasShadow: widget.hasShadow,
-                  shadowColor: widget.shadowColor,
-                  shadowScale: arAndShadow[1],
-                  currentPage: currentPage,
-                ),
+                builder: (context, child) {
+                  return PerspectiveCustomPage(
+                    child: child!,
+                    number: index,
+                    fraction: _controller.viewportFraction,
+                    hasShadow: widget.hasShadow,
+                    shadowColor: widget.shadowColor,
+                    shadowScale: shadowScale,
+                    currentPage: (_controller.position.hasContentDimensions) ? _controller.page! : 0,
+                  );
+                },
               );
             },
           ),
