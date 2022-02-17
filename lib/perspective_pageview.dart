@@ -53,6 +53,12 @@ class _PerspectivePageViewState extends State<PerspectivePageView> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final List<double> arAndShadow = getAspectRatio();
 
