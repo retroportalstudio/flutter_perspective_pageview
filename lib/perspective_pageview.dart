@@ -1,42 +1,44 @@
 library perspective_pageview;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
 enum PVAspectRatio {
-  ONE_ONE,
-  SIXTEEN_NINE,
+  square,
+  sixteenNine,
 }
 
 class PerspectivePageView extends StatefulWidget {
   final List<Widget> children;
   final bool hasShadow;
-  final Color shadowColor;
-  final PVAspectRatio aspectRatio;
+  final Color? shadowColor;
+  final PVAspectRatio? aspectRatio;
 
-  PerspectivePageView({@required this.children, @required this.hasShadow, this.shadowColor,this.aspectRatio});
+  const PerspectivePageView({
+    Key? key,
+    required this.children,
+    required this.hasShadow,
+    this.shadowColor,
+    this.aspectRatio,
+  }) : super(key: key);
 
   @override
   _PerspectivePageViewState createState() => _PerspectivePageViewState();
 }
 
 class _PerspectivePageViewState extends State<PerspectivePageView> {
-  PageValueHolder holder;
+  late PageController _controller;
+  late PageValueHolder holder;
   double fraction = 0.50;
-  PageController _controller;
 
-  getAspectRatio(){
-    switch(widget.aspectRatio){
-      case PVAspectRatio.ONE_ONE:
-        return [1.0,1.6];
-        break;
-      case PVAspectRatio.SIXTEEN_NINE:
-        return [16/9,1.1];
-        break;
+  getAspectRatio() {
+    switch (widget.aspectRatio) {
+      case PVAspectRatio.square:
+        return [1.0, 1.6];
+      case PVAspectRatio.sixteenNine:
+        return [16.0 / 9.0, 1.1];
       default:
-        return [1.0,1.6];
-        break;
+        return [1.0, 1.6];
     }
   }
 
@@ -51,28 +53,33 @@ class _PerspectivePageViewState extends State<PerspectivePageView> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final List<num> arAndShadow = getAspectRatio();
-    return Container(
-      child: Center(
-        child: AspectRatio(
-          aspectRatio: arAndShadow[0],
-          child: ChangeNotifierProvider<PageValueHolder>.value(
-            value: holder,
-            child: PageView.builder(
-                controller: _controller,
-                itemCount: widget.children.length,
-                physics: BouncingScrollPhysics(),
-                itemBuilder: (context, index) {
-                  return MyPage(
-                      child: widget.children[index],
-                      number: index,
-                      fraction: fraction,
-                      hasShadow: widget.hasShadow,
-                      shadowColor: widget.shadowColor,
-                      shadowScale:arAndShadow[1]);
-                }),
-          ),
+    final List<double> arAndShadow = getAspectRatio();
+
+    return Center(
+      child: AspectRatio(
+        aspectRatio: arAndShadow[0],
+        child: ChangeNotifierProvider<PageValueHolder>.value(
+          value: holder,
+          child: PageView.builder(
+              controller: _controller,
+              itemCount: widget.children.length,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, index) {
+                return MyPage(
+                    child: widget.children[index],
+                    number: index,
+                    fraction: fraction,
+                    hasShadow: widget.hasShadow,
+                    shadowColor: widget.shadowColor,
+                    shadowScale: arAndShadow[1]);
+              }),
         ),
       ),
     );
@@ -83,11 +90,19 @@ class MyPage extends StatelessWidget {
   final int number;
   final double fraction;
   final Widget child;
-  final Color shadowColor;
   final bool hasShadow;
+  final Color? shadowColor;
   final double shadowScale;
 
-  MyPage({this.child, this.number, this.fraction, this.hasShadow, this.shadowColor,this.shadowScale});
+  const MyPage({
+    Key? key,
+    required this.child,
+    required this.number,
+    required this.fraction,
+    required this.hasShadow,
+    this.shadowColor,
+    required this.shadowScale,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -111,15 +126,14 @@ class MyPage extends StatelessWidget {
       children: <Widget>[
         if (hasShadow && diff <= 1.0 && diff >= -1.0) ...[
           AnimatedOpacity(
-            duration: Duration(milliseconds: 100),
+            duration: const Duration(milliseconds: 100),
             opacity: 1 - diff.abs(),
             child: Transform(
               alignment: FractionalOffset.bottomCenter,
               transform: shadowMatrix,
               child: Container(
-                decoration: BoxDecoration(boxShadow: [
-                  BoxShadow(color: shadowColor??Colors.black12, blurRadius: 10.0, spreadRadius: 1.0)
-                ]),
+                decoration: BoxDecoration(
+                    boxShadow: [BoxShadow(color: shadowColor ?? Colors.black12, blurRadius: 10.0, spreadRadius: 1.0)]),
               ),
             ),
           ),
@@ -139,15 +153,12 @@ class MyPage extends StatelessWidget {
 class PageValueHolder extends ChangeNotifier {
   double _value;
 
-  PageValueHolder(value) {
-    this._value = value;
-  }
+  PageValueHolder(this._value);
 
-  get value => this._value;
+  get value => _value;
 
   void setValue(newValue) {
-    this._value = newValue;
+    _value = newValue;
     notifyListeners();
   }
 }
-
